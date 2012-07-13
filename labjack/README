@@ -1,0 +1,32 @@
+##Adapter for Labjack U3-HV##
+Labjack U3-HV is a USB based multifunction data acquisition and control device which allows for upto 16 analog input channels. It can be interfaced with any analog or digital sensor to monitor condition of the machine in realtime. The data collected is transferred over USB and any embedded system can be used to log the same.
+#Labjack Driver
+Labjack Manufacturers do not provide any information about the internal hardware used in the device. Hence, it is necessary to write the driver for the device with which it is paired. The c++ source of the driver for unix based OS(exodriver) is provided with the bundle. It needs to be compiled for the embedded device to generate the requisite ‘.so’ library file.
+
+Two different ways were adopted to generate the driver:
+- Cross compiling using arm-linux-unknown distribution of the tool chain on a linux PC
+This method is more time efficient but involves setting up various paths and environment variables on the PC installation of the toolchain, which then need to be replicated on the target machine
+
+- Compiling it directly on the embedded system (in this case Alekto)
+This method requires the programmer to compile the driver over the Alekto itself. The process is extremely time consuming and is not recommended for production phase.
+
+Once the driver was ready, the c++ programs were able to recognize the Labjack U3 -HV device by including a simple header file.
+
+#Labjack Adapter
+The adapter was coded in C++. It follows the standard framework of other MTConnect Adapters currently in use.  The adapter was initially programmed to record and transmit one value per port. Later it was decided to use the same to take sensor input at around 1000Hz per channel. Hence, the adapter was written from scratch by making use of the stream mode supported by the device. As of now, the adapter has been tested for the 1-7 channel input at around 1000Hz per channel.
+
+The adapter is installed along with the driver on Alekto, an ARM9 RISC embedded industrial computer. The Labjack U3-HV connects via USB to an external USB hub powered by external power. Alekto’s init.d can be modified to include a command to autostart the labjack adapter on startup, but for now it needs to be done manually by logging in to device over network or via a connecting cable to the console.
+--Command to be run:
+____labjack_bin_directory> ./labjack
+--Issues
+There are a few issues to be resolved/ features to be added with the current version of the adapter.
+-->Full fledged YAML support
+Input from a YAML file can be used to set the socket parameters, number of channels, the name of various channels, polling frequency and other critical information. 
+
+-->There are certain parameters that need to follow some rules for the adapter to work just fine:
+	-SamplesPerPacket needs to be a multiple of NumChannels
+	-SamplesPerPacket needs to be between 1-25. It must be 25 if the data from multiple channels is supposed to be transferred as one big data packet.
+
+-->Alekto fails to recognize Labjack device when directly plugged into one of the USB ports. It is necessary to plug it via an external USB hub possibly due to some energy related issues.
+
+-->Labjack is accessible thorugh the software layer only as a super user.
